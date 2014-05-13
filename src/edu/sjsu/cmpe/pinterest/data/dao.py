@@ -204,10 +204,14 @@ class Storage(object):
         #Insert User into user namespace
         user_count+=1
         #self.setUser(u,user_count)
-        cl.citrusleaf_object_init_str(u0.object, str(u["name"]))
-        cl.citrusleaf_object_init_str(u1.object, str(u["username"]))
-        cl.citrusleaf_object_init_str(u2.object, str(u["password"]))
-        print "password ", str(u["password"])
+        name = str(u["name"])
+        uname = str(u["username"])
+        passwd = str (u["password"])
+        print
+        cl.citrusleaf_object_init_str(u0.object, name)#str(u["name"]));
+        cl.citrusleaf_object_init_str(u1.object, uname)#str(u["username"]));
+        cl.citrusleaf_object_init_str(u2.object, passwd)#str(u["password"]));
+        print uname, name, passwd
         # Assign the structure back to the "bins" variable
         user[0] = u0
         user[1] = u1
