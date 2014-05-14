@@ -124,7 +124,7 @@ class Storage(object):
 
 ####################### BOARD #######################
 
-   def createBoard(self, user_id, board):
+   '''def createBoard(self, user_id, board):
 	print "---> creating board:",board
 	try:
 		objId = db.pinterestDb['board'].insert(board, safe=True)
@@ -133,26 +133,99 @@ class Storage(object):
 		db.pinterestDb['user'].update({"_id":user_id}, { "$push": {"boards":board}})
 		return str(objId)
 	except:
-		return "duplicate"
+		return "duplicate"'''
+        
+   def createBoard(self,user_id,b, pin_list=""):
+        print "---> creating board:",b
+        
+        board_count = self.getCount("board_count")
+        board_count +=1
+        print "1"
+        board_name = str(b["boardname"])
+        
+        user_id = int(user_id)
+        print "2"
+        cl.citrusleaf_object_init_str(b0.object, board_name)#str(u["name"]));
+        cl.citrusleaf_object_init_str(b1.object, pin_list)
+        cl.citrusleaf_object_init_int(b2.object, user_id)
 
-   def getBoard(self, id):
+        print "user id : ", user_id
+        # Assign the structure back to the "bins" variable
+        board[0] = b0
+        board[1] = b1
+        board[2] = b2
+                
+        print "name ",b["boardname"]
+        print "reading from object " , board[0].object.u.str
+        return_value = cl.citrusleaf_put(clu, "board", str(board_count), key_obj, board, 3, None);
+        self.setCount("board_count", board_count)
+        return board_count
+
+
+   '''def getBoard(self, id):
 	print "---> getting board:",id
 	try:
 		id = ObjectId(str(id))
 		board = db.pinterestDb['board'].find({"_id": id})
 		return self.serializeObjIdInCursor(board)
 	except:
-		return "error"
+		return "error"'''
+        
+   def getBoard(self, id):
+        print "---> getting board:",id
+        rv = cl.citrusleaf_get_all(clu, "board", str(id), key_obj, bins_get_all , size, 100, generation);
+        number_bins = cl.intp_value(size)
+        # Use helper function get_bins to get the bins from pointer bins_get_all and the number of bins
+        if number_bins > 0 : 
+            bins = pcl.get_bins (bins_get_all, number_bins)
+            for i in xrange(number_bins):
+                if ((bins[i].object.type)==cl.CL_STR) & (bins[i].bin_name == "pin_list"):
+                    pin_list = bins[i].object.u.str
+                    
+            print "Pin List : ", pin_list
+            pin_list = pin_list.split(",")
+            pins=[]
+            for pin in pin_list:
+                pins.append(self.getPin(pin))
 
-   def getAllBoards(self):
+            print pins
+            return pins
+        else:
+           return "error"
+        
+
+   '''def getAllBoards(self):
 	print "---> Listing boards:"
 	try:
 		boards = db.pinterestDb['board'].find()
 		return self.serializeObjIdInCursorList(boards)
 	except:
-		return traceback.print_exc()
+		return traceback.print_exc()'''
 
-   def updateBoard(self, user_id, board_id, pin):
+   def getAllBoards(self):
+        print "---> Listing boards:"
+        board_count = self.getCount("board_count")
+        print board_count
+        boards = []
+        for j in xrange(board_count):
+            rv = cl.citrusleaf_get_all(clu, "board", str(j+1), key_obj, bins_get_all , size, 100, generation);
+            number_bins = cl.intp_value(size)
+            # Use helper function get_bins to get the bins from pointer bins_get_all and the number of bins
+            print "j : ", j
+            bins = pcl.get_bins (bins_get_all, number_bins)
+            for i in xrange(number_bins):
+                if ((bins[i].object.type)==cl.CL_STR) & (bins[i].bin_name == "board_name"):
+                    bname = bins[i].object.u.str
+            
+            bId = j+1
+            b = {"board_id" : bId, "board_name" : bname}
+            boards.append(b)
+        return boards
+            
+   
+    
+
+   '''def updateBoard(self, user_id, board_id, pin):
 	print "--> updating board:",board_id
 	try:
 		board_id = ObjectId(str(board_id))
@@ -160,7 +233,48 @@ class Storage(object):
 		board = db.pinterestDb['board'].find({"_id": board_id})
 		return self.serializeObjIdInCursor(board)
 	except:
-		return "error"
+		return "error"'''
+        
+   def updateBoard(self, user_id, board_id, pin):
+        print "--> updating board:",board_id
+        rv = cl.citrusleaf_get_all(clu, "board", str(board_id), key_obj, bins_get_all , size, 100, generation);
+        number_bins = cl.intp_value(size)
+        # Use helper function get_bins to get the bins from pointer bins_get_all and the number of bins
+        if number_bins > 0 : 
+            bins = pcl.get_bins (bins_get_all, number_bins)
+            for i in xrange(number_bins):
+                if ((bins[i].object.type)==cl.CL_STR) & (bins[i].bin_name == "pin_list"):
+                    pin_list = bins[i].object.u.str
+    
+                if ((bins[i].object.type)==cl.CL_STR) & (bins[i].bin_name == "board_name"):
+                    board_name = bins[i].object.u.str
+    
+                
+            print pin_list,board_name        
+            print "Pin List : ", pin_list
+            if (pin_list == "") :
+                pin_list = pin["pin_id"]
+            else :
+                pin_list = str(pin_list)+","+str(pin["pin_id"]) 
+            print "Updated pin list : ", pin_list
+            b = {"boardname": board_name}
+            print b
+            #self.createBoard(user_id, b, pin_list)
+            user_id = int(user_id)
+            pin_list = str(pin_list)
+            cl.citrusleaf_object_init_str(b1.object, pin_list)
+            cl.citrusleaf_object_init_str(b0.object, board_name)#str(u["name"]));
+            cl.citrusleaf_object_init_int(b2.object, user_id)
+            # Assign the structure back to the "bins" variable
+            board[0] = b0
+            board[1] = b1
+            board[2] = b2
+            
+            return_value = cl.citrusleaf_put(clu, "board", str(board_id), key_obj, board, 3, None);
+            print "here"
+            return b
+        return "error"
+       
 
    def deleteBoard(self, user_id, board_id):
 	print "---> deleting board:",board_id
@@ -203,23 +317,7 @@ class Storage(object):
                         return "duplicate"        
         #Insert User into user namespace
         user_count+=1
-        #self.setUser(u,user_count)
-        name = str(u["name"])
-        uname = str(u["username"])
-        passwd = str (u["password"])
-        print
-        cl.citrusleaf_object_init_str(u0.object, name)#str(u["name"]));
-        cl.citrusleaf_object_init_str(u1.object, uname)#str(u["username"]));
-        cl.citrusleaf_object_init_str(u2.object, passwd)#str(u["password"]));
-        print uname, name, passwd
-        # Assign the structure back to the "bins" variable
-        user[0] = u0
-        user[1] = u1
-        user[2] = u2
-        print "name ",u["name"]
-        print "reading from object " , user[0].object.u.str
-        return_value = cl.citrusleaf_put(clu, "user", str(user_count), key_obj, user, 3, None);
-        
+        self.createUser(u,user_count)
         self.setCount("user_count", user_count)
         return user_count
         
@@ -286,13 +384,13 @@ class Storage(object):
                 if ((bins[i].object.type)==cl.CL_STR) & (bins[i].bin_name == "user_name"):
                     uname = bins[i].object.u.str
     
-                if ((bins[i].object.type)==cl.CL_STR) & (bins[i].bin_name == "password"):
-                    passwd = bins[i].object.u.str
+                '''if ((bins[i].object.type)==cl.CL_STR) & (bins[i].bin_name == "password"):
+                    passwd = bins[i].object.u.str'''
     
                 if ((bins[i].object.type)==cl.CL_STR) & (bins[i].bin_name == "name"):
                     name = bins[i].object.u.str
                     
-            print "User values : ", uname, passwd, name
+            print "User values : ", uname, name
             user = {"_id": id, "username" : uname, "name" : name }
             print user
             return user
@@ -317,15 +415,20 @@ class Storage(object):
    def setCount(self,name,value):
     cl.citrusleaf_object_init_int(count0.object, value);
     count[0] = count0
+    print name,value
     return_value = cl.citrusleaf_put(clu, "count", name, key_obj, count, 1, None);
     
     
-   def setUser(self, u, user_count):
+   def createUser(self, u, user_count):
 
-    cl.citrusleaf_object_init_str(u0.object, str(u["name"]))
-    cl.citrusleaf_object_init_str(u1.object, str(u["username"]))
-    cl.citrusleaf_object_init_str(u2.object, str(u["password"]))
-    print "password ", str(u["password"])
+    name = str(u["name"])
+    uname = str(u["username"])
+    passwd = str (u["password"])
+    print
+    cl.citrusleaf_object_init_str(u0.object, name)#str(u["name"]));
+    cl.citrusleaf_object_init_str(u1.object, uname)#str(u["username"]));
+    cl.citrusleaf_object_init_str(u2.object, passwd)#str(u["password"]));
+    print uname, name, passwd
     # Assign the structure back to the "bins" variable
     user[0] = u0
     user[1] = u1
@@ -333,37 +436,6 @@ class Storage(object):
     print "name ",u["name"]
     print "reading from object " , user[0].object.u.str
     return_value = cl.citrusleaf_put(clu, "user", str(user_count), key_obj, user, 3, None);
-    if return_value != cl.CITRUSLEAF_OK :
-        print "1. Failure setting values ", return_value
-        #sys.exit(-1);
-        
-    else:
-        print "Success"
-        
-    size = cl.new_intp()
-    generation = cl.new_intp()
-    # Declare a reference pointer for cl_bin *
-    bins_get_all = cl.new_cl_bin_p()
-    rv = cl.citrusleaf_get_all(clu, "user", str(user_count), key_obj, bins_get_all , size, 100, generation);
-    # Number of bins returned
-    number_bins = cl.intp_value(size)
-    # Use helper function get_bins to get the bins from pointer bins_get_all and the number of bins
-    bins = pcl.get_bins (bins_get_all, number_bins)
-
-        
-    for i in xrange(number_bins):
-        if(bins[i].object.type)==cl.CL_STR:
-            print "Bin name: ",bins[i].bin_name,"Resulting string: ",bins[i].object.u.str
-        elif(bins[i].object.type)==cl.CL_INT:
-            print "Bin name: ",bins[i].bin_name,"Resulting int: ",bins[i].object.u.i64
-        elif bins[i].object.type == cl.CL_BLOB:
-            binary_data = cl.cdata(bins[i].object.u.blob, bins[i].object.sz)
-            print "Bin name: ",bins[i].bin_name,"Resulting decompressed blob: ",zlib.decompress(binary_data)
-        else:
-            print "Bin name: ",bins[i].bin_name,"Unknown bin type: ",bins[i].object.type
-
-
-
 
         
    def serializeObjIdInCursor(self, cursor):
