@@ -55,6 +55,8 @@ p1 = pin[1]
 p1.bin_name = "pin_path"
 p2 = pin[2]
 p2.bin_name = "user_id"
+p3 = pin[3]
+p3.bin_name = "image"
 
 #Comment bins
 c0 = comment[0]
@@ -87,30 +89,78 @@ class Storage(object):
 
 ####################### PIN #######################
 
-   def createPin(self, user_id, pin):
-	print "---> creating pin:",pin
-	try:
-		objId = db.pinterestDb['pin'].insert(pin, safe=True)
-		return str(objId)
-	except:
-		return "error"
+   def createPin(self, user_id, pname, img):
+        print "---> creating pin:",pname
+        pin_count = self.getCount("pin_count")
+        pin_count +=1
+        print "1"
+        pin_name = pname
+        pin_path = str(img.filename)
+        print pin_name, pin_path
+        user_id = int(user_id)
+        print "2"
+        cl.citrusleaf_object_init_str(p0.object, pin_name)#str(u["name"]));
+        cl.citrusleaf_object_init_str(p1.object, pin_path)
+        cl.citrusleaf_object_init_int(p2.object, user_id)
+        #img = zlib.compress(img)
+        print "here"
+        #cl.citrusleaf_object_init_blob(p3.object, img, "102400")
+        print "here too"
+
+        print "user id : ", user_id
+        # Assign the structure back to the "bins" variable
+        pin[0] = p0
+        pin[1] = p1
+        pin[2] = p2
+        #pin[3] = p3
+                
+        print "name ",pin_name
+        print "reading from object " , pin[0].object.u.str
+        return_value = cl.citrusleaf_put(clu, "pin", str(pin_count), key_obj, pin, 3, None);
+        self.setCount("pin_count", pin_count)
+        return pin_count
 
    def getPin(self, id):
-	print "---> getting pin:",id
-	try:
-		id = ObjectId(str(id))
-		pin = db.pinterestDb['pin'].find({"_id": id})
-		return self.serializeObjIdInCursor(pin)
-	except:
-		return "error"
+        print "---> getting pin:",id
+        rv = cl.citrusleaf_get_all(clu, "pin", str(id), key_obj, bins_get_all , size, 100, generation);
+        number_bins = cl.intp_value(size)
+        # Use helper function get_bins to get the bins from pointer bins_get_all and the number of bins
+        if number_bins > 0 : 
+            bins = pcl.get_bins (bins_get_all, number_bins)
+            for i in xrange(number_bins):
+                if ((bins[i].object.type)==cl.CL_STR) & (bins[i].bin_name == "pin_name"):
+                    pname = bins[i].object.u.str
+    
+                '''if ((bins[i].object.type)==cl.CL_STR) & (bins[i].bin_name == "password"):
+                    passwd = bins[i].object.u.str'''
+    
+                if ((bins[i].object.type)==cl.CL_STR) & (bins[i].bin_name == "pin_path"):
+                    ppath = bins[i].object.u.str
+                    
+            print "User values : ", pname, ppath
+            comments = self.getComments(id)
+            user = {"_id": id, "pin_name" : pname, "pin_path" : "./"+ppath, "comments" : comments }
+            print user
+            return user
+        else:
+           return "error"
 
-   def getAllPins(self):
+   '''def getAllPins(self):
 	print "---> Listing pins:"
 	try:
 		pins = db.pinterestDb['pin'].find()
 		return self.serializeObjIdInCursorList(pins)
 	except:
-		return traceback.print_exc()
+		return traceback.print_exc()'''
+        
+   def getAllPins(self):
+        print "---> Listing pins:"
+        pin_count = self.getCount("pin_count")
+        pins = []
+        for i in range(pin_count):
+            pin = self.getPin(i+1)
+            pins.append(pin)
+        return pins
 
    def updatePin(self, user_id, pin_id, comment):
 	print "--> updating pin:", pin_id
@@ -396,7 +446,14 @@ class Storage(object):
             return user
         else:
            return "error"
- 
+       
+##################### COMMENTS ####################
+
+   def getComments(self, pId):
+       return None
+   
+   def setComments(self, uId, comment):
+       print "Setting comments"
 
 
 ################# HELPER FUNCTIONS ###################

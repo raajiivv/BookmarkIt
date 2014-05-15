@@ -36,11 +36,11 @@ class App(object):
    #
    # function to create pin
    # 
-   def createPin(self, user_id, pin):
+   def createPin(self, user_id, pin, image):
       print '--> creating pin'
 
       try:
-        pin_id = self.__store.createPin(user_id, pin)
+        pin_id = self.__store.createPin(user_id, pin, image)
         return {"success" : True, "pin_id": pin_id}
       except:
         return {"success" : False}

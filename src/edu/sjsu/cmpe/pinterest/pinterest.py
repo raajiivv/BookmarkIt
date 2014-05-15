@@ -1,7 +1,7 @@
 import json
 
 # bottle framework
-from bottle import request, response, route, run, template
+from bottle import request, response, route, run, template, abort
 
 # controller
 from controller import App
@@ -26,15 +26,15 @@ def root():
 #
 # upload pin
 #
-@route('/v1/user/<user_id>/pin/upload', method='POST')
+@route('/v1/user/<user_id>/pin', method='POST')
 def createPin(user_id):
-   data = request.body.readline()
-   if not data:
-	abort(400, 'No data received')
-   pin = json.load(request.body)
-   print '-> uploading pin'
-   return app.createPin(user_id, pin)
-
+    pin_name = request.forms.get('pin_name')
+    print pin_name
+    if not pin_name:
+        abort(400, 'No data received')
+    image = request.files.get('image')
+    print '-> uploading pin'
+    return app.createPin(user_id, pin_name,image)
 #
 # get pin by id from db
 #
