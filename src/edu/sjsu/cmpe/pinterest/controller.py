@@ -78,7 +78,7 @@ class App(object):
       print '---> updating pin'
 
       try:
-        pin = self.__store.updatePin(user_id, pin_id, comment)
+        pin = self.__store.setComment(user_id, pin_id, comment)
         return {"success" : True, "pin": pin}
       except:
         return {"success" : False}

@@ -1,16 +1,16 @@
 import time
-import json
+'''import json
 import traceback
-import zlib
+import zlib'''
 import datetime
 import os
 
 import citrusleaf as cl
 import python_citrusleaf as pcl
 
-from bson.objectid import ObjectId
+'''from bson.objectid import ObjectId
 from pymongo import Connection
-db = Connection('localhost', 27017)
+db = Connection('localhost', 27017)'''
 # Initialize citrusleaf once
 cl.citrusleaf_init()
 # Create a cluster with a particular starting host
@@ -26,7 +26,7 @@ cl.citrusleaf_object_init_str(key_obj, "rajiv")
 pin = cl.cl_bin_arr(4)
 board = cl.cl_bin_arr(4)
 
-comment = cl.cl_bin_arr(3)
+comment = cl.cl_bin_arr(4)
 count = cl.cl_bin_arr(2)
 
 user = cl.cl_bin_arr(4)
@@ -65,6 +65,8 @@ c0 = comment[0]
 c0.bin_name = "comment"
 c1 = comment[1]
 c1.bin_name = "pin_id"
+c2 = comment[2]
+c2.bin_name = "user_id"
 
 #Count bins
 count0 = count[0]
@@ -79,7 +81,7 @@ bins_get_all = cl.new_cl_bin_p()
 
 class Storage(object):
  
-   def __init__(self):
+    def __init__(self):
         # initialize our storage, data is a placeholder
         self.data = {}
 
@@ -90,7 +92,7 @@ class Storage(object):
 
 ####################### PIN #######################
 
-   def createPin(self, user_id, pname, img):
+    def createPin(self, user_id, pname, img):
         print "---> creating pin:",pname
         pin_count = self.getCount("pin_count")
         pin_count +=1
@@ -108,7 +110,7 @@ class Storage(object):
             os.mkdir(dir)
         fname = str(datetime.datetime.now())+'_'+str(img.filename)
         filepath = dir + '/'+fname
-        imageUrl = 'http://localhost:8000'+str(user_id)+fname
+        imageUrl = 'http://localhost:8080'+str(user_id)+fname
         
         img.save(filepath)
         print(imageUrl)
@@ -135,7 +137,7 @@ class Storage(object):
         self.setCount("pin_count", pin_count)
         return pin_count
 
-   def getPin(self, id):
+    def getPin(self, id):
         print "---> getting pin:",id
         rv = cl.citrusleaf_get_all(clu, "pin", str(id), key_obj, bins_get_all , size, 100, generation);
         number_bins = cl.intp_value(size)
@@ -154,21 +156,13 @@ class Storage(object):
                     
             print "User values : ", pname, ppath
             comments = self.getComments(id)
-            user = {"_id": id, "pin_name" : pname, "pin_path" : "./"+ppath, "comments" : comments }
+            user = {"_id": id, "pin_name" : pname, "pin_path" : ppath, "comments" : comments }
             print user
             return user
         else:
            return "error"
 
-   '''def getAllPins(self):
-	print "---> Listing pins:"
-	try:
-		pins = db.pinterestDb['pin'].find()
-		return self.serializeObjIdInCursorList(pins)
-	except:
-		return traceback.print_exc()'''
-        
-   def getAllPins(self):
+    def getAllPins(self):
         print "---> Listing pins:"
         pin_count = self.getCount("pin_count")
         pins = []
@@ -177,30 +171,9 @@ class Storage(object):
             pins.append(pin)
         return pins
 
-   '''def updatePin(self, user_id, pin_id, comment):
-	print "--> updating pin:", pin_id
-	try:
-		pin_id = ObjectId(str(pin_id))
-		db.pinterestDb['pin'].update({"_id": pin_id}, { "$push": {"comments":{"user":user_id, "comment":comment["comment"]}} });
-		pin = db.pinterestDb['pin'].find({"_id": pin_id})
-		return self.serializeObjIdInCursor(pin)
-	except:
-		return "error"'''
-
 ####################### BOARD #######################
 
-   '''def createBoard(self, user_id, board):
-	print "---> creating board:",board
-	try:
-		objId = db.pinterestDb['board'].insert(board, safe=True)
-		user_id = ObjectId(str(user_id))
-		board = {"board_id":str(objId), "board_name":board["boardname"]}
-		db.pinterestDb['user'].update({"_id":user_id}, { "$push": {"boards":board}})
-		return str(objId)
-	except:
-		return "duplicate"'''
-        
-   def createBoard(self,user_id,b, pin_list=""):
+    def createBoard(self,user_id,b, pin_list=""):
         print "---> creating board:",b
         
         board_count = self.getCount("board_count")
@@ -226,17 +199,7 @@ class Storage(object):
         self.setCount("board_count", board_count)
         return board_count
 
-
-   '''def getBoard(self, id):
-	print "---> getting board:",id
-	try:
-		id = ObjectId(str(id))
-		board = db.pinterestDb['board'].find({"_id": id})
-		return self.serializeObjIdInCursor(board)
-	except:
-		return "error"'''
-        
-   def getBoard(self, id):
+    def getBoard(self, id):
         print "---> getting board:",id
         rv = cl.citrusleaf_get_all(clu, "board", str(id), key_obj, bins_get_all , size, 100, generation);
         number_bins = cl.intp_value(size)
@@ -256,18 +219,11 @@ class Storage(object):
             print pins
             return pins
         else:
-           return "error"
+            return "error"
         
 
-   '''def getAllBoards(self):
-	print "---> Listing boards:"
-	try:
-		boards = db.pinterestDb['board'].find()
-		return self.serializeObjIdInCursorList(boards)
-	except:
-		return traceback.print_exc()'''
 
-   def getAllBoards(self):
+    def getAllBoards(self):
         print "---> Listing boards:"
         board_count = self.getCount("board_count")
         print board_count
@@ -288,20 +244,7 @@ class Storage(object):
                 boards.append(b)
         return boards
             
-   
-    
-
-   '''def updateBoard(self, user_id, board_id, pin):
-	print "--> updating board:",board_id
-	try:
-		board_id = ObjectId(str(board_id))
-		db.pinterestDb['board'].update({"_id": board_id}, { "$push": {"pins":pin} });
-		board = db.pinterestDb['board'].find({"_id": board_id})
-		return self.serializeObjIdInCursor(board)
-	except:
-		return "error"'''
-        
-   def updateBoard(self, user_id, board_id, pin):
+    def updateBoard(self, user_id, board_id, pin):
         print "--> updating board:",board_id
         rv = cl.citrusleaf_get_all(clu, "board", str(board_id), key_obj, bins_get_all , size, 100, generation);
         number_bins = cl.intp_value(size)
@@ -314,7 +257,6 @@ class Storage(object):
     
                 if ((bins[i].object.type)==cl.CL_STR) & (bins[i].bin_name == "board_name"):
                     board_name = bins[i].object.u.str
-    
                 
             print pin_list,board_name        
             print "Pin List : ", pin_list
@@ -340,19 +282,8 @@ class Storage(object):
             print "here"
             return b
         return "error"
-       
 
-   '''def deleteBoard(self, user_id, board_id):
-	print "---> deleting board:",board_id
-	try:
-		user_id = ObjectId(str(user_id))
-		db.pinterestDb['board'].remove({"_id": board_id})
-		db.pinterestDb['user'].update({"_id": user_id}, { "$pull": {"boards":{"board_id":board_id}} })
-		return "success"
-	except:
-		return "error"'''
-
-   def deleteBoard(self, user_id, board_id):
+    def deleteBoard(self, user_id, board_id):
         print "---> deleting board:", board_id
         cl.delete_intp(generation)
         cl.delete_cl_bin_p(bins_get_all)
@@ -362,20 +293,7 @@ class Storage(object):
 
 ####################### USER #######################
 
-   '''def register(self, user):
-	print "---> registering user:",user
-	existing = db.pinterestDb['user'].find({"username":user["username"]})
-	if existing.hasNext():
-		return "duplicate"
-	try:
-		user = {"username":user["username"], "password":user["password"], "name":user["name"], "boards":[]}
-		objId = db.pinterestDb['user'].insert(user, safe=True)
-		return str(objId)
-	except:
-		return "duplicate"
-    '''    
-        
-   def register(self,u):
+    def register(self,u):
         print "---> registering user : ",u
         # Number of bins returned
         user_count = self.getCount("user_count")
@@ -395,15 +313,7 @@ class Storage(object):
         self.setCount("user_count", user_count)
         return user_count
         
-   '''def login(self, username, password):
-	print "---> logging in:",username
-	try:
-		user = db.pinterestDb['user'].find({"username": username, "password":password}, {"_id":1})
-		return self.serializeObjIdInCursor(user)
-	except:
-		return "error"'''
-   
-   def login (self, username, password):
+    def login (self, username, password):
         print "---> logging in:",username
         user_count = self.getCount("user_count")
         print user_count
@@ -434,17 +344,7 @@ class Storage(object):
             print "final"
         return "error"
         
-   
-   '''def getUser(self, id):
-	print "---> getting user:",id
-	try:
-		id = ObjectId(str(id))
-		user = db.pinterestDb['user'].find({"_id": id}, {"password":0})
-		return self.serializeObjIdInCursor(user)
-	except:
-		return "error"'''
-       
-   def getUser(self, id):
+    def getUser(self, id):
         print "---> getting user:",id
         '''user_count = self.getCount("user_count")
         print user_count
@@ -473,62 +373,95 @@ class Storage(object):
        
 ##################### COMMENTS ####################
 
-   def getComments(self, pId):
-       return None
+    def getComments(self, pId):
+        comment_count = self.getCount("comment_count")
+        pId = int(pId)
+        comments = []
+        for j in xrange(comment_count):
+            rv = cl.citrusleaf_get_all(clu, "comment", str(j+1), key_obj, bins_get_all , size, 100, generation);
+            number_bins = cl.intp_value(size)
+            # Use helper function get_bins to get the bins from pointer bins_get_all and the number of bins
+            bins = pcl.get_bins (bins_get_all, number_bins)
+            for i in xrange(number_bins):
+                if ((bins[i].object.type)==cl.CL_INT): 
+                    #print "comparing ", u["username"], " with database object ", bins[i].object.u.str
+                    if (bins[i].bin_name == "pin_id"): 
+                        pin_id = bins[i].object.u.i64
+                    if (bins[i].bin_name == "user_id"):
+                        user_id = bins[i].object.u.i64
+                if ((bins[i].object.type)==cl.CL_STR) & (bins[i].bin_name == "comment"):
+                    comment_string = bins[i].object.u.str
+            if(pId == pin_id):
+                c = {"user_id" : user_id, "comments":comment_string }
+                comments.append(c)
+        return comments
+        
    
-   def setComments(self, uId, comment):
-       print "Setting comments"
+    def setComment(self, uId, pId, c):
+        print "----> User ", uId," commenting ", c["comment"], " on pin ", pId
+        comment_count = self.getCount("comment_count")
+        comment_count +=1
+        print "1"
+        comment_string = str(c["comment"])
+        
+        user_id = int(uId)
+        pin_id = int(pId)
+        print "2"
+        
+        cl.citrusleaf_object_init_str(c0.object, comment_string)#str(u["name"]));
+        cl.citrusleaf_object_init_int(c1.object, pin_id)
+        cl.citrusleaf_object_init_int(c2.object, user_id)
+
+        print "user id : ", user_id
+        # Assign the structure back to the "bins" variable
+        comment[0] = c0
+        comment[1] = c1
+        comment[2] = c2
+                
+        print "name ",c["comment"]
+        print "reading from object " , comment[0].object.u.str
+        return_value = cl.citrusleaf_put(clu, "comment", str(comment_count), key_obj, comment, 3, None);
+        self.setCount("comment_count", comment_count)
+        
+        return self.getPin(pin_id)
+         
 
 
 ################# HELPER FUNCTIONS ###################
 
-   def getCount(self, name):
-    rv = cl.citrusleaf_get_all(clu, "count", name, key_obj, bins_get_all , size, 100, generation);
-    # Number of bins returned
-    number_bins = cl.intp_value(size)
-    # Use helper function get_bins to get the bins from pointer bins_get_all and the number of bins
-    bins = pcl.get_bins (bins_get_all, number_bins)
-    for i in xrange(number_bins):
-        if ((bins[i].object.type)==cl.CL_INT) & (bins[i].bin_name == "count") :
-            return bins[i].object.u.i64
-    return 0
+    def getCount(self, name):
+        rv = cl.citrusleaf_get_all(clu, "count", name, key_obj, bins_get_all , size, 100, generation);
+        # Number of bins returned
+        number_bins = cl.intp_value(size)
+        # Use helper function get_bins to get the bins from pointer bins_get_all and the number of bins
+        bins = pcl.get_bins (bins_get_all, number_bins)
+        for i in xrange(number_bins):
+            if ((bins[i].object.type)==cl.CL_INT) & (bins[i].bin_name == "count") :
+                return bins[i].object.u.i64
+        return 0
 
-   def setCount(self,name,value):
-    cl.citrusleaf_object_init_int(count0.object, value);
-    count[0] = count0
-    print name,value
-    return_value = cl.citrusleaf_put(clu, "count", name, key_obj, count, 1, None);
+    def setCount(self,name,value):
+        cl.citrusleaf_object_init_int(count0.object, value);
+        count[0] = count0
+        print name,value
+        return_value = cl.citrusleaf_put(clu, "count", name, key_obj, count, 1, None);
     
     
-   def createUser(self, u, user_count):
-
-    name = str(u["name"])
-    uname = str(u["username"])
-    passwd = str (u["password"])
-    print
-    cl.citrusleaf_object_init_str(u0.object, name)#str(u["name"]));
-    cl.citrusleaf_object_init_str(u1.object, uname)#str(u["username"]));
-    cl.citrusleaf_object_init_str(u2.object, passwd)#str(u["password"]));
-    print uname, name, passwd
-    # Assign the structure back to the "bins" variable
-    user[0] = u0
-    user[1] = u1
-    user[2] = u2
-    print "name ",u["name"]
-    print "reading from object " , user[0].object.u.str
-    return_value = cl.citrusleaf_put(clu, "user", str(user_count), key_obj, user, 3, None);
+    def createUser(self, u, user_count):
+        name = str(u["name"])
+        uname = str(u["username"])
+        passwd = str (u["password"])
+        print
+        cl.citrusleaf_object_init_str(u0.object, name)#str(u["name"]));
+        cl.citrusleaf_object_init_str(u1.object, uname)#str(u["username"]));
+        cl.citrusleaf_object_init_str(u2.object, passwd)#str(u["password"]));
+        print uname, name, passwd
+        # Assign the structure back to the "bins" variable
+        user[0] = u0
+        user[1] = u1
+        user[2] = u2
+        print "name ",u["name"]
+        print "reading from object " , user[0].object.u.str
+        return_value = cl.citrusleaf_put(clu, "user", str(user_count), key_obj, user, 3, None);
 
         
-   def serializeObjIdInCursor(self, cursor):
-      serializedJson = ""
-      for element in cursor:
-	element["_id"] = str(element["_id"])
-	serializedJson = element
-      return serializedJson
-
-   def serializeObjIdInCursorList(self, cursor):
-      serializedJson = []
-      for element in cursor:
-	element["_id"] = str(element["_id"])
-	serializedJson.append(element)
-      return serializedJson

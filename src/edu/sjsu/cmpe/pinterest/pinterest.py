@@ -54,7 +54,7 @@ def getAllPins():
 #
 # add comments to pin
 #
-@route('/v1/user/<user_id>/pin/<pin_id>', method='PUT')
+@route('/v1/user/<user_id>/pin/<pin_id>/comment', method='POST')
 def updatePin(user_id, pin_id):
    data = request.body.readline()
    if not data:
