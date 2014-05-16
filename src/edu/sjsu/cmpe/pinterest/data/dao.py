@@ -1,16 +1,12 @@
 import time
-'''import json
-import traceback
-import zlib'''
+
 import datetime
 import os
 
 import citrusleaf as cl
 import python_citrusleaf as pcl
 
-'''from bson.objectid import ObjectId
-from pymongo import Connection
-db = Connection('localhost', 27017)'''
+
 # Initialize citrusleaf once
 cl.citrusleaf_init()
 # Create a cluster with a particular starting host
@@ -211,10 +207,11 @@ class Storage(object):
                     pin_list = bins[i].object.u.str
                     
             print "Pin List : ", pin_list
-            pin_list = pin_list.split(",")
             pins=[]
-            for pin in pin_list:
-                pins.append(self.getPin(pin))
+            if pin_list != "":
+                pin_list = pin_list.split(",")
+                for pin in pin_list:
+                    pins.append(self.getPin(pin))
 
             print pins
             return pins
