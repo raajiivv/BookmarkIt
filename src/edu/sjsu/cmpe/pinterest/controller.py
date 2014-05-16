@@ -33,7 +33,7 @@ class App(object):
 
 ####################### PIN #######################
 
-   #
+   
    # function to create pin
    # 
    def createPin(self, user_id, pin, image):

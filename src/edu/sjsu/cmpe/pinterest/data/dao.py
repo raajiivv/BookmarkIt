@@ -2,6 +2,8 @@ import time
 import json
 import traceback
 import zlib
+import datetime
+import os
 
 import citrusleaf as cl
 import python_citrusleaf as pcl
@@ -75,7 +77,6 @@ generation = cl.new_intp()
 # Declare a reference pointer for cl_bin *
 bins_get_all = cl.new_cl_bin_p()
 
-
 class Storage(object):
  
    def __init__(self):
@@ -99,13 +100,27 @@ class Storage(object):
         print pin_name, pin_path
         user_id = int(user_id)
         print "2"
+
+        dir = '/home/rajiv/workspace/python/cmpe273-project2/'+str(user_id)
+        print dir
+
+        if not os.path.exists(dir):
+            os.mkdir(dir)
+        fname = str(datetime.datetime.now())+'_'+str(img.filename)
+        filepath = dir + '/'+fname
+        imageUrl = 'http://localhost:8000'+str(user_id)+fname
+        
+        img.save(filepath)
+        print(imageUrl)
+        
         cl.citrusleaf_object_init_str(p0.object, pin_name)#str(u["name"]));
-        cl.citrusleaf_object_init_str(p1.object, pin_path)
+        cl.citrusleaf_object_init_str(p1.object, filepath)
         cl.citrusleaf_object_init_int(p2.object, user_id)
         #img = zlib.compress(img)
         print "here"
         #cl.citrusleaf_object_init_blob(p3.object, img, "102400")
         print "here too"
+        
 
         print "user id : ", user_id
         # Assign the structure back to the "bins" variable
@@ -162,7 +177,7 @@ class Storage(object):
             pins.append(pin)
         return pins
 
-   def updatePin(self, user_id, pin_id, comment):
+   '''def updatePin(self, user_id, pin_id, comment):
 	print "--> updating pin:", pin_id
 	try:
 		pin_id = ObjectId(str(pin_id))
@@ -170,7 +185,7 @@ class Storage(object):
 		pin = db.pinterestDb['pin'].find({"_id": pin_id})
 		return self.serializeObjIdInCursor(pin)
 	except:
-		return "error"
+		return "error"'''
 
 ####################### BOARD #######################
 
@@ -261,15 +276,16 @@ class Storage(object):
             rv = cl.citrusleaf_get_all(clu, "board", str(j+1), key_obj, bins_get_all , size, 100, generation);
             number_bins = cl.intp_value(size)
             # Use helper function get_bins to get the bins from pointer bins_get_all and the number of bins
-            print "j : ", j
-            bins = pcl.get_bins (bins_get_all, number_bins)
-            for i in xrange(number_bins):
-                if ((bins[i].object.type)==cl.CL_STR) & (bins[i].bin_name == "board_name"):
-                    bname = bins[i].object.u.str
-            
-            bId = j+1
-            b = {"board_id" : bId, "board_name" : bname}
-            boards.append(b)
+            if number_bins>0:
+                print "j : ", j
+                bins = pcl.get_bins (bins_get_all, number_bins)
+                for i in xrange(number_bins):
+                    if ((bins[i].object.type)==cl.CL_STR) & (bins[i].bin_name == "board_name"):
+                        bname = bins[i].object.u.str
+                
+                bId = j+1
+                b = {"board_id" : bId, "board_name" : bname}
+                boards.append(b)
         return boards
             
    
@@ -326,7 +342,7 @@ class Storage(object):
         return "error"
        
 
-   def deleteBoard(self, user_id, board_id):
+   '''def deleteBoard(self, user_id, board_id):
 	print "---> deleting board:",board_id
 	try:
 		user_id = ObjectId(str(user_id))
@@ -334,7 +350,15 @@ class Storage(object):
 		db.pinterestDb['user'].update({"_id": user_id}, { "$pull": {"boards":{"board_id":board_id}} })
 		return "success"
 	except:
-		return "error"
+		return "error"'''
+
+   def deleteBoard(self, user_id, board_id):
+        print "---> deleting board:", board_id
+        cl.delete_intp(generation)
+        cl.delete_cl_bin_p(bins_get_all)
+        deletion = cl.delete_intp(size)
+        cl.citrusleaf_delete(clu, "board", str(board_id), key_obj, deletion ) 
+
 
 ####################### USER #######################
 
